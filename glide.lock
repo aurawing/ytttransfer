@@ -1,0 +1,12 @@
+hash: 2c134c39c511d1dbd1d9d5bd232cf9100025213f571f35d8277fa83f6879d5e8
+updated: 2019-10-21T22:20:26.7027232+08:00
+imports:
+- name: github.com/eoscanada/eos-go
+  version: dc31757533135f3380a5dd5143531eef82fdbeff
+- name: github.com/yottachain/YTCrypto
+  version: 5ba8993f71713d052f23417019fa081cfc0e9001
+- name: go.mongodb.org/mongo-driver
+  version: 1c3b9b9a41eecdf056560e07b68e6407b8d598c3
+  subpackages:
+  - mongo
+testImports: []
