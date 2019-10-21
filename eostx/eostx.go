@@ -1,9 +1,7 @@
 package eostx
 
 import (
-	"encoding/hex"
 	"encoding/json"
-	"errors"
 	"fmt"
 
 	"github.com/eoscanada/eos-go"
@@ -11,13 +9,17 @@ import (
 	_ "github.com/eoscanada/eos-go/token"
 )
 
+type Eostx struct {
+	API *eos.API
+}
+
 // NewInstance create a new eostx instance contans connect url, contract owner and it's private key
-func NewInstance(url) *eos.API {
-	return eos.New(url)
+func NewInstance(url string) *Eostx {
+	return &Eostx{eos.New(url)}
 }
 
 //GetExchangeRate get exchange rate between YTA and storage space
-func (api *eos.API) GetAccounts() ([]*AccountsInfo, error) {
+func (api *Eostx) GetAccounts() ([]*AccountsInfo, error) {
 	req := eos.GetTableByScopeRequest{
 		Code:  "eosio.token",
 		Table: "accounts",
@@ -25,7 +27,7 @@ func (api *eos.API) GetAccounts() ([]*AccountsInfo, error) {
 	}
 	accounts := make([]*AccountsInfo, 0)
 	for {
-		resp, err := api.GetTableByScope(req)
+		resp, err := api.API.GetTableByScope(req)
 		if err != nil {
 			return nil, fmt.Errorf("get table row failed：get accounts：%s\n", err.Error())
 		}
@@ -35,7 +37,7 @@ func (api *eos.API) GetAccounts() ([]*AccountsInfo, error) {
 			return nil, err
 		}
 		for _, acc := range rows {
-			assets, err := api.GetCurrencyBalance(eos.AN(acc.Scope), "YTT", "eosio.token")
+			assets, err := api.API.GetCurrencyBalance(eos.AN(acc.Scope), "YTT", "eosio.token")
 			if err != nil {
 				return nil, err
 			}
@@ -55,8 +57,8 @@ func (api *eos.API) GetAccounts() ([]*AccountsInfo, error) {
 	return accounts, nil
 }
 
-func (api *eos.API) GetPubKey(account string) (string, error) {
-	resp, err := eostx.API.GetAccount(eos.AN(account))
+func (api *Eostx) GetPubKey(account string) (string, error) {
+	resp, err := api.API.GetAccount(eos.AN(account))
 	if err != nil {
 		return "", err
 	}

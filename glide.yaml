@@ -1,4 +1,4 @@
-package: github.com/yottachain/ytttransfer
+package: github.com/aurawing/ytttransfer
 import:
 - package: github.com/yottachain/YTCrypto
   version: master
@@ -6,3 +6,18 @@ import:
   version: v1.0.0
 - package: github.com/eoscanada/eos-go
   version: v0.8.11
+- package: github.com/tidwall/gjson
+  version: v1.2.1
+- package: github.com/tidwall/sjson
+  version: v1.0.4
+- package: go.uber.org/zap
+  version: v1.10.0
+- package: golang.org/x/sync
+  subpackages:
+  - semaphore
+- package: golang.org/x/text
+  subpackages:
+  - unicode
+- package: golang.org/x/crypto
+  subpackages:
+  - pbkdf2
