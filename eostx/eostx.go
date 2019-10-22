@@ -2,9 +2,10 @@ package eostx
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 
-	"github.com/eoscanada/eos-go"
+	eos "github.com/eoscanada/eos-go"
 	_ "github.com/eoscanada/eos-go/system"
 	_ "github.com/eoscanada/eos-go/token"
 )
@@ -26,6 +27,7 @@ func (api *Eostx) GetAccounts() ([]*AccountsInfo, error) {
 		Limit: 100,
 	}
 	accounts := make([]*AccountsInfo, 0)
+	i := 0
 	for {
 		resp, err := api.API.GetTableByScope(req)
 		if err != nil {
@@ -37,6 +39,7 @@ func (api *Eostx) GetAccounts() ([]*AccountsInfo, error) {
 			return nil, err
 		}
 		for _, acc := range rows {
+			i++
 			assets, err := api.API.GetCurrencyBalance(eos.AN(acc.Scope), "YTT", "eosio.token")
 			if err != nil {
 				return nil, err
@@ -46,6 +49,7 @@ func (api *Eostx) GetAccounts() ([]*AccountsInfo, error) {
 					acc.Bal = int64(a.Amount)
 				}
 			}
+			fmt.Printf("#%d# Fetch account info: %s -> %d\n", i, acc.Scope, acc.Bal)
 		}
 		accounts = append(accounts, rows...)
 		if resp.More == "" {
@@ -58,12 +62,21 @@ func (api *Eostx) GetAccounts() ([]*AccountsInfo, error) {
 }
 
 func (api *Eostx) GetPubKey(account string) (string, error) {
-	resp, err := api.API.GetAccount(eos.AN(account))
+	resp := new(AccountResp)
+	err := api.API.Call("chain", "get_account", M{"account_name": eos.AN(account)}, resp)
 	if err != nil {
+		fmt.Println(err.Error())
 		return "", err
 	}
+	// resp, err := api.API.GetAccount(eos.AN(account))
+	// if err != nil {
+	// 	return "", err
+	// }
 	perms := resp.Permissions
 	for _, p := range perms {
-		p.RequiredAuth
+		if p.PermName == "active" {
+			return p.RequiredAuth.Keys[0].PublicKey, nil
+		}
 	}
+	return "", errors.New("no valid public key")
 }

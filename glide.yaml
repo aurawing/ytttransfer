@@ -12,6 +12,9 @@ import:
   version: v1.0.4
 - package: go.uber.org/zap
   version: v1.10.0
+- package: github.com/libp2p/go-libp2p-core
+  version: v0.0.3
+- package: github.com/stretchr/testify
 - package: golang.org/x/sync
   subpackages:
   - semaphore
