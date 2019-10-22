@@ -107,7 +107,7 @@ func main() {
 				return
 			}
 		})
-
+		log.Printf(fmt.Sprintf("Server is listening on port %d\n", *port))
 		err = http.ListenAndServe(fmt.Sprintf(":%d", *port), nil)
 		if err != nil {
 			panic(err.Error())
