@@ -24,8 +24,6 @@ func main() {
 	}
 	etx := eostx.NewInstance(*eosURL)
 
-	// _, _ = etx.GetPubKey("zzzzzzzzzzz1")
-
 	if *snapshot {
 		log.Println("Starting take a snapshot of EOS balances...")
 		accounts, err := etx.GetAccounts()
@@ -48,6 +46,7 @@ func main() {
 		if err != nil {
 			w.WriteHeader(400)
 			w.Write([]byte(fmt.Sprintf("错误：%s", err.Error())))
+			fmt.Printf("!!! balance -> get account info error: %s\n", err.Error())
 			return
 		}
 		if reg.Exclude {
@@ -57,6 +56,7 @@ func main() {
 		}
 		w.WriteHeader(200)
 		w.Write([]byte(fmt.Sprintf("%d", reg.Balance)))
+		return
 	})
 
 	http.HandleFunc("/reg", func(w http.ResponseWriter, r *http.Request) {
@@ -83,11 +83,20 @@ func main() {
 		if err != nil {
 			w.WriteHeader(400)
 			w.Write([]byte(fmt.Sprintf("错误：%s", err.Error())))
+			fmt.Printf("!!! reg -> get account info error: %s\n", err.Error())
 			return
 		}
 		pubkey := reg.Pubkey
 		if ok := ytcrypto.Verify(pubkey, []byte(fmt.Sprintf("%s#%s", account, ethaddr)), sig); ok {
+			err = mgc.RegEthAddr(account, ethaddr)
+			if err != nil {
+				w.WriteHeader(400)
+				w.Write([]byte(fmt.Sprintf("错误：%s", err.Error())))
+				fmt.Printf("!!! reg -> RegEthAddr error: %s\n", err.Error())
+				return
+			}
 			w.WriteHeader(200)
+			fmt.Printf("register eth address success: %s -> %s\n", account, ethaddr)
 			return
 		} else {
 			w.WriteHeader(401)
