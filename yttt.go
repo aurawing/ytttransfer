@@ -32,7 +32,6 @@ func NewInstance(mongoURL string) (*Mongoc, error) {
 }
 
 func (client *Mongoc) Snapshot(accounts []*eostx.AccountsInfo, etx *eostx.Eostx) {
-	collection := client.Client.Database("ytttransfer").Collection("registry")
 	for i, acc := range accounts {
 		pubkey, err := etx.GetPubKey(acc.Scope)
 		if err != nil {
@@ -41,7 +40,8 @@ func (client *Mongoc) Snapshot(accounts []*eostx.AccountsInfo, etx *eostx.Eostx)
 		} else {
 			pubkey = strings.TrimLeft(pubkey, "YTA")
 		}
-		_, err = collection.InsertOne(context.Background(), bson.M{"_id": acc.Scope, "pubkey": pubkey, "balance": acc.Bal, "ethaddr": "", "exclude": false})
+		//_, err = collection.InsertOne(context.Background(), bson.M{"_id": acc.Scope, "pubkey": pubkey, "balance": acc.Bal, "ethaddr": "", "exclude": false})
+		err = client.AddRegistry(acc.Scope, pubkey, acc.Bal)
 		if err != nil {
 			log.Printf("#%d# !!! error when snapshot: %s -> %d\n", i, acc.Scope, acc.Bal)
 			log.Printf("    %s\n", err.Error())
@@ -58,6 +58,12 @@ func (client *Mongoc) RegEthAddr(account, ethaddr string) error {
 		return err
 	}
 	return nil
+}
+
+func (client *Mongoc) AddRegistry(account, pubkey string, balance int64) error {
+	collection := client.Client.Database("ytttransfer").Collection("registry")
+	_, err := collection.InsertOne(context.Background(), bson.M{"_id": account, "pubkey": pubkey, "balance": balance, "ethaddr": "", "exclude": false})
+	return err
 }
 
 func (client *Mongoc) GetAccountInfo(account string) (*Registry, error) {

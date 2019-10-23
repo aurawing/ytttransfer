@@ -40,15 +40,16 @@ func (api *Eostx) GetAccounts() ([]*AccountsInfo, error) {
 		}
 		for _, acc := range rows {
 			i++
-			assets, err := api.API.GetCurrencyBalance(eos.AN(acc.Scope), "YTT", "eosio.token")
+			acc.Bal, err = api.GetBalance(acc.Scope)
+			//assets, err := api.API.GetCurrencyBalance(eos.AN(acc.Scope), "YTT", "eosio.token")
 			if err != nil {
 				return nil, err
 			}
-			for _, a := range assets {
-				if a.Symbol.Symbol == "YTT" {
-					acc.Bal = int64(a.Amount)
-				}
-			}
+			// for _, a := range assets {
+			// 	if a.Symbol.Symbol == "YTT" {
+			// 		acc.Bal = int64(a.Amount)
+			// 	}
+			// }
 			fmt.Printf("#%d# Fetch account info: %s -> %d\n", i, acc.Scope, acc.Bal)
 		}
 		accounts = append(accounts, rows...)
@@ -59,6 +60,19 @@ func (api *Eostx) GetAccounts() ([]*AccountsInfo, error) {
 		}
 	}
 	return accounts, nil
+}
+
+func (api *Eostx) GetBalance(account string) (int64, error) {
+	assets, err := api.API.GetCurrencyBalance(eos.AN(account), "YTT", "eosio.token")
+	if err != nil {
+		return 0, err
+	}
+	for _, a := range assets {
+		if a.Symbol.Symbol == "YTT" {
+			return int64(a.Amount), nil
+		}
+	}
+	return 0, errors.New("no YTT balance")
 }
 
 func (api *Eostx) GetPubKey(account string) (string, error) {
