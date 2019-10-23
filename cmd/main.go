@@ -54,7 +54,7 @@ func main() {
 						return
 					}
 					//balance, _ := etx.GetBalance(account)
-					err = mgc.AddRegistry(account, pubkey, 0)
+					err = mgc.AddRegistry(account, strings.TrimLeft(pubkey, "YTA"), 0)
 					if err != nil {
 						w.Write([]byte(formatJson(400, 0, err.Error())))
 						fmt.Printf("!!! balance -> get account info error: %s\n", "账号不存在")
