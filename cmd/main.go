@@ -26,7 +26,7 @@ func main() {
 	eosURL := flag.String("eos-url", "http://129.28.188.167:8888", "EOS URL")
 	snapshot := flag.Bool("snapshot", false, "Take a snapshot of EOS balance")
 	port := flag.Int("port", 8080, "Listening port")
-	daemon := flag.Bool("d", true, "Run as registry server")
+	daemon := flag.Bool("d", false, "Run as registry server")
 	flag.Parse()
 
 	mgc, err := yt.NewInstance(*mongoURL)
