@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
 	"strings"
@@ -12,12 +15,18 @@ import (
 	ytcrypto "github.com/yottachain/YTCrypto"
 )
 
+type Req struct {
+	Account string `json:"account"`
+	EthAddr string `json:"ethaddr"`
+	Sig     string `json:"sig"`
+}
+
 func main() {
 	mongoURL := flag.String("mongo-url", "mongodb://127.0.0.1:27017", "MongoDB URL")
 	eosURL := flag.String("eos-url", "http://129.28.188.167:8888", "EOS URL")
 	snapshot := flag.Bool("snapshot", false, "Take a snapshot of EOS balance")
 	port := flag.Int("port", 8080, "Listening port")
-	daemon := flag.Bool("d", false, "Run as registry server")
+	daemon := flag.Bool("d", true, "Run as registry server")
 	flag.Parse()
 
 	mgc, err := yt.NewInstance(*mongoURL)
@@ -38,6 +47,7 @@ func main() {
 
 	if *daemon {
 		http.HandleFunc("/balance", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 			vals := r.URL.Query()
 			if vals == nil || len(vals) == 0 || vals["account"] == nil || len(vals["account"]) == 0 || strings.TrimSpace(vals["account"][0]) == "" {
 				w.Write([]byte(formatJson(400, 0, "账号不能为空")))
@@ -46,7 +56,7 @@ func main() {
 			account := vals["account"][0]
 			reg, err := mgc.GetAccountInfo(account)
 			if err != nil {
-				if strings.Contains(err.Error(), "no documents in result") {
+				if strings.Contains(err.Error(), "no documents in result") || strings.Contains(err.Error(), "resource not found") {
 					pubkey, err := etx.GetPubKey(account)
 					if err != nil {
 						w.Write([]byte(formatJson(400, 0, err.Error())))
@@ -77,18 +87,29 @@ func main() {
 		})
 
 		http.HandleFunc("/reg", func(w http.ResponseWriter, r *http.Request) {
-			r.ParseForm()
-			account := r.Form.Get("account")
+			w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+			s, err := ioutil.ReadAll(r.Body)
+			if err != nil {
+				w.Write([]byte(formatJson(500, 0, err.Error())))
+				return
+			}
+			formData := new(Req)
+			err = json.NewDecoder(bytes.NewReader(s)).Decode(&formData)
+			if err != nil {
+				w.Write([]byte(formatJson(400, 0, "参数格式不正确")))
+				return
+			}
+			account := formData.Account
 			if strings.Trim(account, " ") == "" {
 				w.Write([]byte(formatJson(400, 0, "账号不能为空")))
 				return
 			}
-			ethaddr := r.Form.Get("ethaddr")
+			ethaddr := formData.EthAddr
 			if strings.Trim(ethaddr, " ") == "" {
 				w.Write([]byte(formatJson(400, 0, "ERC20钱包地址不能为空")))
 				return
 			}
-			sig := r.Form.Get("sig")
+			sig := formData.Sig
 			if strings.Trim(sig, " ") == "" {
 				w.Write([]byte(formatJson(400, 0, "签名不能为空")))
 				return
@@ -100,7 +121,7 @@ func main() {
 				return
 			}
 			pubkey := reg.Pubkey
-			if ok := ytcrypto.Verify(pubkey, []byte(fmt.Sprintf("%s#%s", account, ethaddr)), sig); ok {
+			if ok := ytcrypto.Verify(pubkey, []byte(fmt.Sprintf("account=%s&ethaddr=%s", account, ethaddr)), sig); ok {
 				err = mgc.RegEthAddr(account, ethaddr)
 				if err != nil {
 					w.Write([]byte(formatJson(500, 0, err.Error())))
