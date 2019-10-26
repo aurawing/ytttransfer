@@ -86,6 +86,24 @@ func main() {
 			return
 		})
 
+		http.HandleFunc("/ethaddr", func(w http.ResponseWriter, r *http.Request) {
+			w.Header().Set("Content-Type", "application/json;charset=UTF-8")
+			vals := r.URL.Query()
+			if vals == nil || len(vals) == 0 || vals["account"] == nil || len(vals["account"]) == 0 || strings.TrimSpace(vals["account"][0]) == "" {
+				w.Write([]byte(formatJson(400, 0, "账号不能为空")))
+				return
+			}
+			account := vals["account"][0]
+			reg, err := mgc.GetAccountInfo(account)
+			if err != nil {
+				w.Write([]byte(formatJson(400, 0, err.Error())))
+				fmt.Printf("!!! ethaddr -> get account info error: %s\n", err.Error())
+				return
+			}
+			w.Write([]byte(formatJson2(0, reg.EthAddr, "请求成功")))
+			return
+		})
+
 		http.HandleFunc("/reg", func(w http.ResponseWriter, r *http.Request) {
 			w.Header().Set("Content-Type", "application/json;charset=UTF-8")
 			s, err := ioutil.ReadAll(r.Body)
@@ -149,4 +167,8 @@ func main() {
 
 func formatJson(code int, data int64, msg string) string {
 	return fmt.Sprintf("{\"code\":%d, \"data\": %d, \"msg\":\"%s\"}", code, data, msg)
+}
+
+func formatJson2(code int, data string, msg string) string {
+	return fmt.Sprintf("{\"code\":%d, \"data\": \"%s\", \"msg\":\"%s\"}", code, data, msg)
 }
