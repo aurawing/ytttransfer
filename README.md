@@ -7,3 +7,5 @@ func (api *API) Call(baseAPI string, endpoint string, body interface{}, out inte
 	return api.call(baseAPI, endpoint, body, out)
 }
 ```
+
+注：使用go-mod时需要修改%GOPATH%\pkg\mod\github.com\eoscanada\eos-go@v0.8.11下的源文件

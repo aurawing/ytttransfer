@@ -26,7 +26,7 @@
 # Ignore all local history of files
 .history
 
-### glide lock file ###
-glide.lock
+### go sum ###
+go.sum
 
 # End of https://www.gitignore.io/api/go,visualstudiocode
