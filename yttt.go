@@ -41,7 +41,7 @@ func (client *Mongoc) Snapshot(accounts []*eostx.AccountsInfo, etx *eostx.Eostx)
 			pubkey = strings.TrimLeft(pubkey, "YTA")
 		}
 		//_, err = collection.InsertOne(context.Background(), bson.M{"_id": acc.Scope, "pubkey": pubkey, "balance": acc.Bal, "ethaddr": "", "exclude": false})
-		err = client.AddRegistry(acc.Scope, pubkey, acc.Bal)
+		err = client.AddSnapshot(acc.Scope, pubkey, acc.Bal)
 		if err != nil {
 			log.Printf("#%d# !!! error when snapshot: %s -> %d\n", i, acc.Scope, acc.Bal)
 			log.Printf("    %s\n", err.Error())
@@ -54,10 +54,38 @@ func (client *Mongoc) RegEthAddr(account, ethaddr string) error {
 	collection := client.Client.Database("ytttransfer").Collection("registry")
 	_, err := collection.UpdateOne(context.Background(), bson.M{"_id": account}, bson.M{"$set": bson.M{"ethaddr": ethaddr}})
 	if err != nil {
-		log.Printf("!!! error when registering ethaddress: %s -> %s\n", account, ethaddr)
+		log.Printf("!!! error when registering ethaddress: %s -> %s : %s\n", account, ethaddr, err.Error())
 		return err
 	}
 	return nil
+}
+
+func (client *Mongoc) AddSnapshot(account, pubkey string, balance int64) error {
+	collection := client.Client.Database("ytttransfer").Collection("snapshot")
+	collectionReg := client.Client.Database("ytttransfer").Collection("registry")
+	_, err := collection.InsertOne(context.Background(), bson.M{"_id": account, "pubkey": pubkey, "balance": balance, "ethaddr": "", "exclude": false})
+	if err != nil {
+		log.Printf("!!! error when insert snapshot: %s -> %s\n", account, err.Error())
+		return err
+	}
+	//Todo: update registry collection
+	ret := collectionReg.FindOne(context.Background(), bson.M{"_id": account})
+	if err = ret.Err(); err != nil {
+		if strings.Contains(err.Error(), "no documents in result") || strings.Contains(err.Error(), "resource not found") {
+			return client.AddRegistry(account, pubkey, balance)
+		} else {
+			log.Printf("!!! error when find registry when snapshoting: %s -> %s\n", account, err.Error())
+			return err
+		}
+	} else {
+		_, err = collectionReg.UpdateOne(context.Background(), bson.M{"_id": account}, bson.M{"$set": bson.M{"balance": balance}})
+		if err != nil {
+			log.Printf("!!! error when update registry when snapshoting: %s -> %s\n", account, err.Error())
+			return err
+		} else {
+			return nil
+		}
+	}
 }
 
 func (client *Mongoc) AddRegistry(account, pubkey string, balance int64) error {

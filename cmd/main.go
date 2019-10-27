@@ -24,7 +24,7 @@ type Req struct {
 func main() {
 	mongoURL := flag.String("mongo-url", "mongodb://127.0.0.1:27017", "MongoDB URL")
 	eosURL := flag.String("eos-url", "http://129.28.188.167:8888", "EOS URL")
-	snapshot := flag.Bool("snapshot", false, "Take a snapshot of EOS balance")
+	snapshot := flag.Bool("snapshot", true, "Take a snapshot of EOS balance")
 	port := flag.Int("port", 8080, "Listening port")
 	daemon := flag.Bool("d", false, "Run as registry server")
 	flag.Parse()
