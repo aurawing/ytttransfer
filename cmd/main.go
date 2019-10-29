@@ -12,7 +12,6 @@ import (
 
 	yt "github.com/aurawing/ytttransfer"
 	"github.com/aurawing/ytttransfer/eostx"
-	ytcrypto "github.com/yottachain/YTCrypto"
 )
 
 type Req struct {
@@ -21,10 +20,20 @@ type Req struct {
 	Sig     string `json:"sig"`
 }
 
+func main1() {
+	tokenSess := yt.InitTranns("http://127.0.0.1:7545", "0xfA783e105BdB7Acab8Ee9c54f55152CAB7780c83")
+	err := tokenSess.Transaction("0x70Ff94919370145D854Ab3E61e13b59f74638e7e", "ddee5ca793baa4608f863fbb050cfc13a77d92f430f4aa493d00f16c6c123b78", 100)
+	if err != nil {
+		panic(err.Error())
+	}
+
+	// _ = tokenSess.Balance("0x0Bd0C6a3E1B7672F600C111B525B7613Dc147E18")
+}
+
 func main() {
 	mongoURL := flag.String("mongo-url", "mongodb://127.0.0.1:27017", "MongoDB URL")
 	eosURL := flag.String("eos-url", "http://129.28.188.167:8888", "EOS URL")
-	snapshot := flag.Bool("snapshot", true, "Take a snapshot of EOS balance")
+	snapshot := flag.Bool("snapshot", false, "Take a snapshot of EOS balance")
 	port := flag.Int("port", 8080, "Listening port")
 	daemon := flag.Bool("d", false, "Run as registry server")
 	flag.Parse()
@@ -139,7 +148,7 @@ func main() {
 				return
 			}
 			pubkey := reg.Pubkey
-			if ok := ytcrypto.Verify(pubkey, []byte(fmt.Sprintf("account=%s&ethaddr=%s", account, ethaddr)), sig); ok {
+			if ok := yt.Verify(pubkey, []byte(fmt.Sprintf("account=%s&ethaddr=%s", account, ethaddr)), sig); ok {
 				err = mgc.RegEthAddr(account, ethaddr)
 				if err != nil {
 					w.Write([]byte(formatJson(500, 0, err.Error())))
